@@ -2,6 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import copy
 import random
+from blotto_plus import compute_exploitability
 
 def generate_strategies_loop(state, idx, troops_left, master_list):
     new_state = copy.deepcopy(state)
@@ -131,6 +132,15 @@ class Trainer:
         p2_action = self.p2.select_action()
         self.p1.update_learning(self.game, p1_action, p2_action)
         self.p2.update_learning(self.game, p2_action, p1_action)
+    
+    def compute_exploitability(self):
+        p1_strategies = self.p1.strategies
+        avg_strat = self.p1.get_average_strategy()
+
+        def eval_game(s1, s2):
+            return self.game.evaluate_game(s1, s2)
+
+        return compute_exploitability(p1_strategies, avg_strat, eval_game)
 
     def train(self, iterations):
         for i in tqdm(range(iterations)):
@@ -140,11 +150,11 @@ class Trainer:
         for prob, strat in zip(self.p1.get_average_strategy(), self.p1.strategies):
             print(f"{strat} -> {prob:.4f}")
             prob_sums += prob 
-
+        print(f"Exploitability: {self.compute_exploitability()}")
         #print(f"Sum of all probabilities: {prob_sums}")
         # print(self.p1.get_average_strategy())
         # print(self.p2.get_average_strategy())
         
-
-trainer = Trainer(4, 2)
-trainer.train(100000)
+if __name__ == "__main__":
+    trainer = Trainer(6, 4)
+    trainer.train(100000)
